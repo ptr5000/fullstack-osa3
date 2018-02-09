@@ -15,26 +15,6 @@ morgan.token('json', function (req, res) {
 })
 app.use(morgan(':method :url :status :json :response-time ms - :res[content-length]'))
 
-let book = [
-    {
-        name: "Seppo",
-        number: "040-123456",
-        id: 1
-    }, {
-        name: "Jorma",
-        number: "050-543443",
-        id: 2
-    }, {
-        name: "Kari",
-        number: "040-5885665",
-        id: 3
-    }, {
-        name: "Pirkko",
-        number: "040-565655",
-        id: 4
-    }
-]
-
 app.get('/api/persons/', (req, res) => {
     Entry
         .find({})
@@ -47,7 +27,7 @@ app.get('/api/persons/:id', (req, res) => {
     Entry
         .findById(req.params.id)
         .then(result => {
-            res.json(result.map(Entry.format))
+            res.json(Entry.format(result))
         })
 })
 
@@ -105,7 +85,10 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 app.get('/info/', (req, res) => {
-    res.send("puhelinluettelossa " + book.length + " henkilön tiedot")
+    Entry.count({}, function( err, count){
+        res.send("puhelinluettelossa " + count + " henkilön tiedot")
+    })
+    
 })
 
 const PORT = process.env.PORT || 3001
