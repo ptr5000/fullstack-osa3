@@ -1,9 +1,14 @@
 const http = require('http')
 const express = require('express')
+var morgan = require('morgan')
 const app = express()
 const bodyParser = require('body-parser')
 
 app.use(bodyParser.json())
+
+morgan.token('json', function(req, res){ return JSON.stringify(req.body) })
+app.use(morgan(':method :url :status :json :response-time ms - :res[content-length]'))
+
 
 let book = [
     {
@@ -41,8 +46,7 @@ app.get('/api/persons/:id', (req, res) => {
 
 app.post('/api/persons', (req, res) => {
     const body = req.body
-    console.log(body)
-
+    
     if (body.name === undefined) {
         return res.status(400).json({error: 'name missing'})
     }
