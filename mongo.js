@@ -1,7 +1,10 @@
 const mongoose = require('mongoose')
 
-// korvaa url oman tietokantasi urlilla. ethän laita salasanaa Gothubiin!
-const url = 'mongodb://dbuser:'+process.env.MONGO_PW+'@ds231228.mlab.com:31228/osa3'
+if ( process.env.NODE_ENV !== 'production' ) {
+    require('dotenv').config()
+}
+
+const url = process.env.MONGODB_URI
 
 console.log(url)
 
