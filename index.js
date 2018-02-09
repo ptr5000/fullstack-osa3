@@ -46,27 +46,37 @@ app.post('/api/persons', (req, res) => {
             .json({error: 'number missing'})
     }
 
+    /*
     if (book.find(entry => entry.name == body.name)) {
         return res
             .status(400)
             .json({error: 'name already exists'})
-    }
+    }*/
 
-    let n = {
-        name: body.name,
-        number: body.number
-    }
+    Entry
+        .find()
+        .or([{name: body.name}, {number: body.number}])
+        .then(result => {
+            if (result.length == 0) {
+                let n = {
+                    name: body.name,
+                    number: body.number
+                }
 
-    const entry = new Entry(n)
+                const entry = new Entry(n)
 
-    entry
-        .save()
-        .then(response => {
-            res.json(n)
-            mongoose
-                .connection
-                .close()
+                entry
+                    .save()
+                    .then(response => {
+                        res.json(n)
+                    })
+            } else {
+                return res
+                    .status(400)
+                    .json({error: 'name or number already exists'})
+            }
         })
+
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -85,10 +95,11 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 app.get('/info/', (req, res) => {
-    Entry.count({}, function( err, count){
-        res.send("puhelinluettelossa " + count + " henkilön tiedot")
-    })
-    
+    Entry
+        .count({}, function (err, count) {
+            res.send("puhelinluettelossa " + count + " henkilön tiedot")
+        })
+
 })
 
 const PORT = process.env.PORT || 3001
