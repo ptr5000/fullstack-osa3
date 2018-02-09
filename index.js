@@ -4,14 +4,16 @@ var morgan = require('morgan')
 const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const Entry = require('./models/entry')
 
 app.use(cors())
 app.use(bodyParser.json())
 app.use(express.static('build'))
 
-morgan.token('json', function(req, res){ return JSON.stringify(req.body) })
+morgan.token('json', function (req, res) {
+    return JSON.stringify(req.body)
+})
 app.use(morgan(':method :url :status :json :response-time ms - :res[content-length]'))
-
 
 let book = [
     {
@@ -34,59 +36,79 @@ let book = [
 ]
 
 app.get('/api/persons/', (req, res) => {
-    res.json(book)
+    Entry
+        .find({})
+        .then(result => {
+            res.json(result.map(Entry.format))
+        })
 })
 
 app.get('/api/persons/:id', (req, res) => {
-    const b = book.find(entry => entry.id === Number(req.params.id))
-
-    if(b == null) {
-        res.status(404).end()
-    } else {
-        res.json(b) 
-    }
+    Entry
+        .findById(req.params.id)
+        .then(result => {
+            res.json(result.map(Entry.format))
+        })
 })
 
 app.post('/api/persons', (req, res) => {
     const body = req.body
-    
+
     if (body.name === undefined) {
-        return res.status(400).json({error: 'name missing'})
+        return res
+            .status(400)
+            .json({error: 'name missing'})
     }
 
     if (body.number === undefined) {
-        return res.status(400).json({error: 'number missing'})
+        return res
+            .status(400)
+            .json({error: 'number missing'})
     }
 
-    if(book.find(entry => entry.name == body.name)) {
-        return res.status(400).json({error: 'name already exists'})
+    if (book.find(entry => entry.name == body.name)) {
+        return res
+            .status(400)
+            .json({error: 'name already exists'})
     }
 
     let n = {
         name: body.name,
-        number: body.number,
-        id: Math.floor(Math.random() * 100000000000)
+        number: body.number
     }
 
-    book = book.concat(n)
+    const entry = new Entry(n)
 
-    res.json(n)
-
+    entry
+        .save()
+        .then(response => {
+            res.json(n)
+            mongoose
+                .connection
+                .close()
+        })
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-    book = book.filter(entry => entry.id !== Number(req.params.id))
-    res.status(204).end()
+    Entry
+        .findByIdAndRemove(req.params.id)
+        .then(result => {
+            res
+                .status(204)
+                .end()
+        })
+        .catch(error => {
+            res
+                .status(400)
+                .send({error: 'unknown id'})
+        })
 })
-
-
 
 app.get('/info/', (req, res) => {
     res.send("puhelinluettelossa " + book.length + " henkilön tiedot")
 })
 
-
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+    console.log(`Server running on port ${PORT}`)
 })
